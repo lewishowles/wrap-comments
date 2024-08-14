@@ -1,17 +1,14 @@
 {
 	"name": "wrap-comments",
+	"displayName": "Wrap comments",
 	"version": "0.0.1",
+	"description": "Comments look better, to me, wrapped at 80 characters. This plugin re-flows a comment to do just that, so you don’t have to think about it.",
 	"main": "./extension.js",
-	"devDependencies": {
-		"@eslint/js": "^9.9.0",
-		"@stylistic/eslint-plugin": "^2.6.2",
-		"eslint": "^8.57.0",
-		"globals": "^15.9.0"
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/lewishowles/wrap-comments.git"
 	},
 	"activationEvents": [],
-	"categories": [
-		"Other"
-	],
 	"contributes": {
 		"commands": [
 			{
@@ -20,12 +17,16 @@
 			}
 		]
 	},
-	"description": "Wraps the current section of a comment to 80 characters",
-	"displayName": "Wrap comments",
 	"engines": {
 		"vscode": "^1.92.0"
 	},
 	"scripts": {
 		"lint": "eslint ."
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.9.0",
+		"@stylistic/eslint-plugin": "^2.6.2",
+		"eslint": "^8.57.0",
+		"globals": "^15.9.0"
 	}
 }
