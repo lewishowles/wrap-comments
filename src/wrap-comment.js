@@ -73,7 +73,8 @@ function isComment(text) {
 
 	return prefixes.some(prefix => trimmedText.startsWith(prefix)) &&
 		!text.includes("@param") &&
-		!text.includes("@return");
+		!text.includes("@return") &&
+		!text.includes("*/");
 }
 
 /**
