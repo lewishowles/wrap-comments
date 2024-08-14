@@ -1,5 +1,6 @@
 {
 	"name": "wrap-comments",
+	"publisher": "LewisHowles",
 	"displayName": "Wrap comments",
 	"version": "0.1.0",
 	"description": "Comments look better, to me, wrapped at 80 characters. This plugin re-flows a comment to do just that, so you don’t have to think about it.",
