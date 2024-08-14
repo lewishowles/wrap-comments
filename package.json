@@ -1,0 +1,31 @@
+{
+	"name": "wrap-comments",
+	"version": "0.0.1",
+	"main": "./extension.js",
+	"devDependencies": {
+		"@eslint/js": "^9.9.0",
+		"@stylistic/eslint-plugin": "^2.6.2",
+		"eslint": "^8.57.0",
+		"globals": "^15.9.0"
+	},
+	"activationEvents": [],
+	"categories": [
+		"Other"
+	],
+	"contributes": {
+		"commands": [
+			{
+				"command": "wrap-comments.wrapComment",
+				"title": "Wrap comment"
+			}
+		]
+	},
+	"description": "Wraps the current section of a comment to 80 characters",
+	"displayName": "Wrap comments",
+	"engines": {
+		"vscode": "^1.92.0"
+	},
+	"scripts": {
+		"lint": "eslint ."
+	}
+}

@@ -1,0 +1,13 @@
+# npm
+node_modules
+.npmrc
+
+# Build artifacts
+*.vsix
+
+# macOS files
+.DS_Store
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
