@@ -43,9 +43,9 @@ is turned into
  */
 ```
 
-At the moment, this plugin hasn't been published, and must be installed manually.
-
 ## Building the package
+
+At the moment, this plugin hasn't been published, and must be installed manually.
 
 Install `vsce` if it doesn't already exist:
 
