@@ -1,0 +1,10 @@
+{
+	"ignorePatterns": ["build/**", "sketch-to-tailwind.sketchplugin/**"],
+	"htmlWhitespaceSensitivity": "ignore",
+	"printWidth": 100,
+	"semi": true,
+	"singleQuote": false,
+	"sortTailwindcss": true,
+	"trailingComma": "all",
+	"useTabs": true
+}

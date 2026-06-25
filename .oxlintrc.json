@@ -1,0 +1,97 @@
+{
+	"plugins": ["oxc", "unicorn", "vue"],
+	"jsPlugins": ["@stylistic/eslint-plugin"],
+	"categories": {
+		"correctness": "error"
+	},
+	"env": {
+		"builtin": true,
+		"browser": true
+	},
+	"globals": {
+		"__COMPONENTS_VERSION__": "readonly",
+		"defineEmits": "readonly",
+		"defineExpose": "readonly",
+		"defineModel": "readonly",
+		"defineOptions": "readonly",
+		"defineProps": "readonly",
+		"defineSlots": "readonly",
+		"withDefaults": "readonly"
+	},
+	"ignorePatterns": ["build/**", "sketch-to-tailwind.sketchplugin/**"],
+	"rules": {
+		"no-case-declarations": "error",
+		"no-empty": "error",
+		"no-fallthrough": "error",
+		"no-prototype-builtins": "error",
+		"no-redeclare": "error",
+		"no-regex-spaces": "error",
+		"no-undef": "error",
+		"no-unexpected-multiline": "error",
+		"no-useless-assignment": "error",
+		"preserve-caught-error": "error",
+
+		"vue/no-arrow-functions-in-watch": "error",
+		"vue/no-deprecated-data-object-declaration": "error",
+		"vue/no-deprecated-delete-set": "error",
+		"vue/no-deprecated-destroyed-lifecycle": "error",
+		"vue/no-deprecated-events-api": "error",
+		"vue/no-deprecated-model-definition": "error",
+		"vue/no-deprecated-vue-config-keycodes": "error",
+		"vue/no-export-in-script-setup": "error",
+		"vue/no-lifecycle-after-await": "error",
+		"vue/prefer-import-from-vue": "error",
+		"vue/return-in-computed-property": "error",
+		"vue/valid-define-emits": "error",
+		"vue/valid-define-props": "error",
+		"vue/no-multiple-slot-args": "warn",
+		"vue/no-required-prop-with-default": "warn",
+
+		"@stylistic/no-confusing-arrow": "error",
+		"@stylistic/padding-line-between-statements": [
+			"error",
+			{ "blankLine": "always", "prev": "const", "next": "let" },
+			{ "blankLine": "always", "prev": "let", "next": "const" },
+			{ "blankLine": "always", "prev": "*", "next": "break" },
+			{ "blankLine": "always", "prev": ["const", "let"], "next": "*" },
+			{ "blankLine": "always", "prev": "*", "next": "return" },
+			{ "blankLine": "any", "prev": "const", "next": "const" },
+			{ "blankLine": "any", "prev": "let", "next": "let" },
+			{ "blankLine": "always", "prev": "multiline-const", "next": "*" },
+			{ "blankLine": "always", "prev": "*", "next": "multiline-const" }
+		]
+	},
+	"overrides": [
+		{
+			"files": [
+				"src/*.js",
+				"src/analyser/**",
+				"src/bridge/**",
+				"src/mappings/**",
+				"src/render/**",
+				"src/tailwind/**"
+			],
+			"env": {
+				"node": false
+			},
+			"globals": {
+				"CGPointMake": "readonly",
+				"NSWindowCloseButton": "readonly",
+				"NSWindowMiniaturizeButton": "readonly",
+				"NSWindowZoomButton": "readonly",
+				"NSURL": "readonly",
+				"require": "readonly"
+			}
+		},
+		{
+			"files": ["scripts/**/*.js"],
+			"env": {
+				"node": true
+			}
+		}
+	],
+	"options": {
+		"typeAware": false,
+		"typeCheck": false
+	}
+}
