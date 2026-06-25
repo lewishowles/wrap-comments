@@ -403,6 +403,53 @@ describe("wrapCommentText", () => {
 
 		expect(result).toBe(expected);
 	});
+
+	it("wraps a parameter description while preserving its additional indent", () => {
+		const jsDocConfig = getLanguageConfigForId("javascript");
+		const input = [
+			"/**",
+			" * Format a vehicle for display in a detail view.",
+			" *",
+			" * @param  {object}  vehicle",
+			" *     The raw vehicle data containing all properties returned by the remote vehicle service.",
+			" */",
+		].join("\n");
+		const expected = [
+			"/**",
+			" * Format a vehicle for display in a detail view.",
+			" *",
+			" * @param  {object}  vehicle",
+			" *     The raw vehicle data containing all properties",
+			" *     returned by the remote vehicle service.",
+			" */",
+		].join("\n");
+
+		const result = wrapCommentText(input, 55, jsDocConfig, mockCalculateLength);
+
+		expect(result).toBe(expected);
+	});
+
+	it("rewraps multiple parameter-description lines with consistent indentation", () => {
+		const jsDocConfig = getLanguageConfigForId("javascript");
+		const input = [
+			"/**",
+			" * @param  {object}  vehicle",
+			" *     The raw vehicle data containing all properties returned",
+			" *     by the remote vehicle service.",
+			" */",
+		].join("\n");
+		const result = wrapCommentText(input, 55, jsDocConfig, mockCalculateLength);
+		const descriptionLines = result
+			.split("\n")
+			.filter((line) => line.includes("vehicle data") || line.includes("remote vehicle"));
+
+		expect(descriptionLines).toHaveLength(2);
+
+		descriptionLines.forEach((line) => {
+			expect(line.startsWith(" *     ")).toBe(true);
+			expect(mockCalculateLength(line)).toBeLessThanOrEqual(55);
+		});
+	});
 });
 
 describe("wrapParagraph", () => {

@@ -251,13 +251,19 @@ function wrapParagraph(lines, width, config, calculateLengthFunction) {
 		return lines;
 	}
 
-	// Determine the length of the comment marker, accounting for tabs.
-	const commentMarkerLength = calculateLengthFunction(commentMarker);
 	// Remove the comment markers from the lines, ready for wrapping.
 	const strippedLines = lines.map((line) => line.slice(commentMarker.length));
-	// Create a single paragraph from the lines.
-	const paragraph = strippedLines.join(" ").trim();
-	// Begin the wrapping process.
+	const leadingWhitespace = strippedLines[0].match(/^\s*/)?.[0] ?? "";
+
+	// The formatter always adds one space after the comment marker, so only
+	// preserve whitespace beyond that standard separator.
+	const contentIndent = leadingWhitespace.startsWith(" ")
+		? leadingWhitespace.slice(1)
+		: leadingWhitespace;
+
+	const commentMarkerLength = calculateLengthFunction(commentMarker);
+	const contentIndentLength = calculateLengthFunction(contentIndent);
+	const paragraph = strippedLines.map((line) => line.trim()).join(" ");
 	const wrappedLines = [];
 
 	paragraph.split(" ").reduce((currentLine, word, index, array) => {
@@ -265,15 +271,14 @@ function wrapParagraph(lines, width, config, calculateLengthFunction) {
 			return currentLine;
 		}
 
-		// Determine the length of the line if we add this word to it.
 		const potentialNewLineLength =
 			calculateLengthFunction(currentLine) +
 			calculateLengthFunction(word) +
 			commentMarkerLength +
+			contentIndentLength +
 			1;
 
 		if (potentialNewLineLength > width) {
-			// Finish the current line and create a new one.
 			wrappedLines.push(currentLine.trim());
 
 			currentLine = `${word} `;
@@ -281,7 +286,6 @@ function wrapParagraph(lines, width, config, calculateLengthFunction) {
 			currentLine += `${word} `;
 		}
 
-		// If we're on the last word, add our last line to our collection.
 		if (index === array.length - 1) {
 			wrappedLines.push(currentLine.trim());
 		}
@@ -289,8 +293,7 @@ function wrapParagraph(lines, width, config, calculateLengthFunction) {
 		return currentLine;
 	}, "");
 
-	// Re-add the comment markers and preserve indentation
-	return wrappedLines.map((line) => `${commentMarker} ${line}`);
+	return wrappedLines.map((line) => `${commentMarker} ${contentIndent}${line}`);
 }
 
 module.exports = {
