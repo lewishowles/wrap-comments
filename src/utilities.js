@@ -2,13 +2,17 @@
 const languageConfiguration = {
 	javascript: {
 		languages: ["javascript", "javascriptreact", "typescript", "typescriptreact"],
-		markers: ["//", "*"],
-		exclusions: ["@param", "@return", "*/"],
+		markers: ["//", "/**", "/*", "*"],
+		jsDocTags: {
+			preserveLine: ["category", "helper", "param", "return", "returns", "signature"],
+			preserveSection: ["example"],
+			wrapSection: ["description", "note"],
+		},
 	},
 	bash: {
 		languages: ["shell", "shellscript", "bash", "sh", "zsh", "properties", "ignore", "dotenv"],
 		markers: ["#"],
-		exclusions: [],
+		jsDocTags: null,
 	},
 };
 
@@ -27,8 +31,12 @@ function getLanguageConfigForId(languageId) {
 
 	return {
 		languages: [],
-		markers: ["//", "*", "#"],
-		exclusions: ["@param", "@return", "*/"],
+		markers: ["//", "/**", "/*", "*", "#"],
+		jsDocTags: {
+			preserveLine: ["category", "helper", "param", "return", "returns", "signature"],
+			preserveSection: ["example"],
+			wrapSection: ["description", "note"],
+		},
 	};
 }
 
@@ -53,11 +61,7 @@ function escapeRegex(text) {
 function isComment(text, config) {
 	const trimmedText = text.trim();
 
-	if (!config.markers.some(marker => trimmedText.startsWith(marker))) {
-		return false;
-	}
-
-	return !config.exclusions.some(exclusion => text.includes(exclusion));
+	return config.markers.some((marker) => trimmedText.startsWith(marker));
 }
 
 /**
@@ -69,7 +73,7 @@ function isComment(text, config) {
  *     The language configuration.
  */
 function getCommentMarker(text, config) {
-	const patterns = config.markers.map(marker => {
+	const patterns = config.markers.map((marker) => {
 		const escaped = escapeRegex(marker);
 
 		return new RegExp(`^\\s*${escaped}`);
@@ -87,11 +91,64 @@ function getCommentMarker(text, config) {
 }
 
 /**
+ * Get the JSDoc tag at the beginning of a comment line.
+ *
+ * @param  {string}  line
+ *     The comment line to inspect.
+ * @param  {object}  config
+ *     The language configuration.
+ */
+function getJsDocTag(line, config) {
+	if (!config.jsDocTags) {
+		return null;
+	}
+
+	const commentMarker = getCommentMarker(line, config);
+
+	if (!commentMarker) {
+		return null;
+	}
+
+	const content = line.slice(commentMarker.length).trim();
+	const match = content.match(/^@([a-zA-Z][\w-]*)\b/);
+
+	return match ? match[1] : null;
+}
+
+/**
+ * Get the configured behaviour for a JSDoc tag.
+ *
+ * @param  {string}  tag
+ *     The JSDoc tag to classify.
+ * @param  {object}  config
+ *     The language configuration.
+ */
+function getJsDocTagBehaviour(tag, config) {
+	if (!tag || !config.jsDocTags) {
+		return null;
+	}
+
+	if (config.jsDocTags.preserveLine.includes(tag)) {
+		return "preserve-line";
+	}
+
+	if (config.jsDocTags.preserveSection.includes(tag)) {
+		return "preserve-section";
+	}
+
+	if (config.jsDocTags.wrapSection.includes(tag)) {
+		return "wrap-section";
+	}
+
+	return "preserve-section";
+}
+
+/**
  * Wrap the given text to the provided maximum length, taking into account any
  * indentation and comment marker that exists.
  *
- * We treat lines between sections of a comment as a paragraph, which are
- * wrapped separately.
+ * JSDoc prose sections are wrapped paragraph by paragraph, while code examples
+ * and metadata tags are preserved.
  *
  * @param  {string}  text
  *     The text to wrap.
@@ -104,51 +161,70 @@ function getCommentMarker(text, config) {
  */
 function wrapCommentText(text, maxLength, config, calculateLengthFunction) {
 	const textLines = text.split("\n");
-	// Our newly wrapped lines.
 	const wrappedLines = [];
 
-	// The current paragraph, denoted by a gap in the comment.
 	let currentParagraph = [];
+	let sectionBehaviour = null;
 
-	textLines.forEach(line => {
+	/**
+	 * Wrap and append the current paragraph, then reset it.
+	 */
+	function flushParagraph() {
+		if (currentParagraph.length === 0) {
+			return;
+		}
+
+		wrappedLines.push(
+			...wrapParagraph(currentParagraph, maxLength, config, calculateLengthFunction),
+		);
+
+		currentParagraph = [];
+	}
+
+	textLines.forEach((line) => {
 		const trimmedLine = line.trim();
+		const jsDocTag = getJsDocTag(line, config);
+		const jsDocTagBehaviour = getJsDocTagBehaviour(jsDocTag, config);
 
-		// Some lines are excluded from wrapping, such as JSDoc blocks and
-		// "end-comment" markers.
-		if (config.exclusions.some(exclusion => line.includes(exclusion))) {
-			if (currentParagraph.length > 0) {
-				wrappedLines.push(...wrapParagraph(currentParagraph, maxLength, config, calculateLengthFunction));
-			}
-
+		// A JSDoc tag begins a new section. Preserve the tag line itself and
+		// use its configured behaviour for the following content.
+		if (jsDocTag) {
+			flushParagraph();
 			wrappedLines.push(line);
 
-			currentParagraph = [];
+			sectionBehaviour = jsDocTagBehaviour === "preserve-line" ? null : jsDocTagBehaviour;
 
 			return;
 		}
 
-		// If this is an empty line, we start a new paragraph by wrapping any
-		// existing paragraph.
+		// Preserve block-comment boundaries without treating them as prose.
+		if (trimmedLine === "/**" || trimmedLine === "/*" || trimmedLine === "*/") {
+			flushParagraph();
+			wrappedLines.push(line);
+			sectionBehaviour = null;
+
+			return;
+		}
+
+		// Preserve every line in sections such as @example.
+		if (sectionBehaviour === "preserve-section") {
+			wrappedLines.push(line);
+
+			return;
+		}
+
+		// Empty comment lines separate prose paragraphs.
 		if (config.markers.includes(trimmedLine)) {
-			if (currentParagraph.length > 0) {
-				wrappedLines.push(...wrapParagraph(currentParagraph, maxLength, config, calculateLengthFunction));
-			}
-
-			// Preserve the empty line.
+			flushParagraph();
 			wrappedLines.push(line);
-
-			currentParagraph = [];
 
 			return;
 		}
 
-		// Add our new line to the current paragraph.
 		currentParagraph.push(line);
 	});
 
-	if (currentParagraph.length > 0) {
-		wrappedLines.push(...wrapParagraph(currentParagraph, maxLength, config, calculateLengthFunction));
-	}
+	flushParagraph();
 
 	return wrappedLines.join("\n");
 }
@@ -178,7 +254,7 @@ function wrapParagraph(lines, width, config, calculateLengthFunction) {
 	// Determine the length of the comment marker, accounting for tabs.
 	const commentMarkerLength = calculateLengthFunction(commentMarker);
 	// Remove the comment markers from the lines, ready for wrapping.
-	const strippedLines = lines.map(line => line.slice(commentMarker.length));
+	const strippedLines = lines.map((line) => line.slice(commentMarker.length));
 	// Create a single paragraph from the lines.
 	const paragraph = strippedLines.join(" ").trim();
 	// Begin the wrapping process.
@@ -190,7 +266,11 @@ function wrapParagraph(lines, width, config, calculateLengthFunction) {
 		}
 
 		// Determine the length of the line if we add this word to it.
-		const potentialNewLineLength = calculateLengthFunction(currentLine) + calculateLengthFunction(word) + commentMarkerLength + 1;
+		const potentialNewLineLength =
+			calculateLengthFunction(currentLine) +
+			calculateLengthFunction(word) +
+			commentMarkerLength +
+			1;
 
 		if (potentialNewLineLength > width) {
 			// Finish the current line and create a new one.
@@ -210,14 +290,16 @@ function wrapParagraph(lines, width, config, calculateLengthFunction) {
 	}, "");
 
 	// Re-add the comment markers and preserve indentation
-	return wrappedLines.map(line => `${commentMarker} ${line}`);
+	return wrappedLines.map((line) => `${commentMarker} ${line}`);
 }
 
 module.exports = {
-	getLanguageConfigForId,
 	escapeRegex,
-	isComment,
 	getCommentMarker,
+	getJsDocTag,
+	getJsDocTagBehaviour,
+	getLanguageConfigForId,
+	isComment,
 	wrapCommentText,
 	wrapParagraph,
 };
